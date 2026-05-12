@@ -1,0 +1,50 @@
+# Local agent/editor guidance
+AGENTS.md
+
+# Build output
+Debug/
+Release/
+debug/
+release/
+build/
+out/
+bin/
+obj/
+
+# STM32CubeIDE / Eclipse metadata
+.metadata/
+.settings/
+.project
+.cproject
+.mxproject
+*.launch
+
+# Generated STM32 and embedded build artifacts
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+*.lst
+*.su
+*.o
+*.obj
+*.d
+*.a
+*.lib
+
+# Doxygen generated documentation
+docs/
+html/
+latex/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS files
+Thumbs.db
+.DS_Store
