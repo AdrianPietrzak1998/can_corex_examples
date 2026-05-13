@@ -10,7 +10,8 @@ extern "C" {
 
 void can_app_init(void);
 void can_app_poll(void);
-void can_app_send_isotp(const uint8_t *data, CCX_ISOTP_Length_t length);
+void can_app_send_isotp_tx1(const uint8_t *data, CCX_ISOTP_Length_t length);
+void can_app_send_isotp_tx2(const uint8_t *data, CCX_ISOTP_Length_t length);
 
 #ifdef __cplusplus
 }

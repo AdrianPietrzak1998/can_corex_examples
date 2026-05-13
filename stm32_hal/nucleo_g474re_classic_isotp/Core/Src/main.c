@@ -48,7 +48,10 @@
 
 /* USER CODE BEGIN PV */
 static uint32_t isotp_last_send_tick = 0U;
-static const uint8_t isotp_payload[] = "CAN1 to CAN2 ISO-TP example";
+static const uint8_t isotp_payload1[] = "CAN1 to CAN2 ISO-TP example";
+static const uint8_t isotp_payload2[] =
+    "CAN2 to CAN1 ISO-TP example with a larger payload. "
+    "This transfer runs at the same scheduler tick as isotp_tx1 and exercises the reverse direction over classic CAN.";
 
 /* USER CODE END PV */
 
@@ -112,7 +115,8 @@ int main(void)
 	  if ((uint32_t)(HAL_GetTick() - isotp_last_send_tick) >= 5000U)
 	  {
 		  isotp_last_send_tick = HAL_GetTick();
-		  can_app_send_isotp(isotp_payload, sizeof(isotp_payload) - 1U);
+		  can_app_send_isotp_tx1(isotp_payload1, sizeof(isotp_payload1) - 1U);
+		  can_app_send_isotp_tx2(isotp_payload2, sizeof(isotp_payload2) - 1U);
 	  }
 
     /* USER CODE END WHILE */

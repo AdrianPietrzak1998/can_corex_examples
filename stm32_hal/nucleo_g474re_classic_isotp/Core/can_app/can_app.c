@@ -12,8 +12,11 @@ CCX_instance_t can1;
 CCX_instance_t can2;
 CCX_ISOTP_TX_t isotp_tx1;
 CCX_ISOTP_RX_t isotp_rx1;
+CCX_ISOTP_TX_t isotp_tx2;
+CCX_ISOTP_RX_t isotp_rx2;
 
 static uint8_t isotp_rx1_buffer[CCX_ISOTP_MAX_CLASSIC_DATA_SIZE];
+static uint8_t isotp_rx2_buffer[CCX_ISOTP_MAX_CLASSIC_DATA_SIZE];
 
 extern __IO uint32_t uwTick;
 
@@ -97,27 +100,31 @@ static void can2_send(const CCX_instance_t *instance, const CCX_message_t *msg)
 
 static void can_app_isotp_tx_complete(CCX_ISOTP_TX_t *instance, void *user_data)
 {
-    (void)instance;
-    (void)user_data;
+    const char *name = (const char *)user_data;
 
-    LOG_WriteLine("isotp_tx1 complete");
+    (void)instance;
+
+    LOG_Printf("%s complete\r\n", name);
 }
 
 static void can_app_isotp_tx_error(CCX_ISOTP_TX_t *instance, CCX_ISOTP_Status_t error, void *user_data)
 {
-    (void)instance;
-    (void)user_data;
+    const char *name = (const char *)user_data;
 
-    LOG_Printf("isotp_tx1 error=%d\r\n", (int)error);
+    (void)instance;
+
+    LOG_Printf("%s error=%d\r\n", name, (int)error);
 }
 
 static void can_app_isotp_rx_complete(CCX_ISOTP_RX_t *instance, const uint8_t *data, CCX_ISOTP_Length_t length,
                                       void *user_data)
 {
-    (void)instance;
-    (void)user_data;
+    const char *name = (const char *)user_data;
 
-    LOG_Printf("isotp_rx1 complete len=%u first='%c' last='%c'\r\n",
+    (void)instance;
+
+    LOG_Printf("%s complete len=%u first='%c' last='%c'\r\n",
+               name,
                (unsigned int)length,
                (length > 0U) ? (char)data[0] : '-',
                (length > 0U) ? (char)data[length - 1U] : '-');
@@ -125,10 +132,11 @@ static void can_app_isotp_rx_complete(CCX_ISOTP_RX_t *instance, const uint8_t *d
 
 static void can_app_isotp_rx_error(CCX_ISOTP_RX_t *instance, CCX_ISOTP_Status_t error, void *user_data)
 {
-    (void)instance;
-    (void)user_data;
+    const char *name = (const char *)user_data;
 
-    LOG_Printf("isotp_rx1 error=%d\r\n", (int)error);
+    (void)instance;
+
+    LOG_Printf("%s error=%d\r\n", name, (int)error);
 }
 
 static void can_app_isotp_init(void)
@@ -138,15 +146,26 @@ static void can_app_isotp_init(void)
     CCX_ISOTP_Status_t status;
 
     CCX_ISOTP_TX_Config_Init(&tx_cfg, 0x700U, CCX_ID_STANDARD, 1000U, 1000U, CCX_ISOTP_NO_PADDING,
-                             NULL, can_app_isotp_tx_complete, can_app_isotp_tx_error);
+                             "isotp_tx1", can_app_isotp_tx_complete, can_app_isotp_tx_error);
     status = CCX_ISOTP_TX_Init(&isotp_tx1, &can1, &tx_cfg);
     LOG_Printf("isotp_tx1 init status=%d\r\n", (int)status);
 
-    CCX_ISOTP_RX_Config_Init(&rx_cfg, 0x701U, CCX_ID_STANDARD, 0U, 0U, 1000U,
+    CCX_ISOTP_RX_Config_Init(&rx_cfg, 0x701U, CCX_ID_STANDARD, 0U, CCX_ISOTP_STMIN_500US, 1000U,
                              isotp_rx1_buffer, sizeof(isotp_rx1_buffer), CCX_ISOTP_NO_PADDING, 0U,
-                             NULL, NULL, can_app_isotp_rx_complete, NULL, can_app_isotp_rx_error);
+                             "isotp_rx1", NULL, can_app_isotp_rx_complete, NULL, can_app_isotp_rx_error);
     status = CCX_ISOTP_RX_Init(&isotp_rx1, &can2, &rx_cfg);
     LOG_Printf("isotp_rx1 init status=%d\r\n", (int)status);
+
+    CCX_ISOTP_TX_Config_Init(&tx_cfg, 0x710U, CCX_ID_STANDARD, 1000U, 1000U, CCX_ISOTP_NO_PADDING,
+                             "isotp_tx2", can_app_isotp_tx_complete, can_app_isotp_tx_error);
+    status = CCX_ISOTP_TX_Init(&isotp_tx2, &can2, &tx_cfg);
+    LOG_Printf("isotp_tx2 init status=%d\r\n", (int)status);
+
+    CCX_ISOTP_RX_Config_Init(&rx_cfg, 0x711U, CCX_ID_STANDARD, 0U, CCX_ISOTP_STMIN_500US, 1000U,
+                             isotp_rx2_buffer, sizeof(isotp_rx2_buffer), CCX_ISOTP_NO_PADDING, 0U,
+                             "isotp_rx2", NULL, can_app_isotp_rx_complete, NULL, can_app_isotp_rx_error);
+    status = CCX_ISOTP_RX_Init(&isotp_rx2, &can1, &rx_cfg);
+    LOG_Printf("isotp_rx2 init status=%d\r\n", (int)status);
 }
 
 static void can_app_handle_rx(FDCAN_HandleTypeDef *hfdcan, uint32_t rx_location, CCX_instance_t *instance)
@@ -232,9 +251,11 @@ void can_app_poll(void)
     (void)CCX_Poll(&can2);
     CCX_ISOTP_TX_Poll(&isotp_tx1);
     CCX_ISOTP_RX_Poll(&isotp_rx1);
+    CCX_ISOTP_TX_Poll(&isotp_tx2);
+    CCX_ISOTP_RX_Poll(&isotp_rx2);
 }
 
-void can_app_send_isotp(const uint8_t *data, CCX_ISOTP_Length_t length)
+void can_app_send_isotp_tx1(const uint8_t *data, CCX_ISOTP_Length_t length)
 {
     CCX_ISOTP_Status_t status;
 
@@ -251,6 +272,26 @@ void can_app_send_isotp(const uint8_t *data, CCX_ISOTP_Length_t length)
     else
     {
         LOG_Printf("isotp_tx1 start error=%d\r\n", (int)status);
+    }
+}
+
+void can_app_send_isotp_tx2(const uint8_t *data, CCX_ISOTP_Length_t length)
+{
+    CCX_ISOTP_Status_t status;
+
+    if ((data == NULL) || (length == 0U))
+    {
+        return;
+    }
+
+    status = CCX_ISOTP_Transmit(&isotp_tx2, data, length);
+    if (status == CCX_ISOTP_OK)
+    {
+        LOG_Printf("isotp_tx2->isotp_rx2 start len=%u\r\n", (unsigned int)length);
+    }
+    else
+    {
+        LOG_Printf("isotp_tx2 start error=%d\r\n", (int)status);
     }
 }
 
