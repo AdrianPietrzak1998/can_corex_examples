@@ -9,8 +9,8 @@ CAN_ClimateFrame_t CAN1_RxClimate = {0};
 CAN_CounterFrame_t CAN2_RxCounter = {0};
 CAN_SpeedFrame_t CAN2_RxSpeed = {0};
 
-extern CCX_ISOTP_TX_t can1_isotp_tx;
-extern CCX_ISOTP_RX_t can2_isotp_rx;
+extern CCX_ISOTP_TX_t isotp_tx1;
+extern CCX_ISOTP_RX_t isotp_rx1;
 
 static void can_app_copy_rx(uint8_t *dst, uint8_t dst_size, const uint8_t *src, uint8_t len)
 {
@@ -157,7 +157,7 @@ CCX_RX_table_t can1_rx_table[CAN1_RX_END] =
         .Parser = can1_missing_counter_rx_parser,
         .TimeoutCallback = can1_missing_counter_timeout
     },
-    [CAN1_RX_ISOTP_FC] = CCX_ISOTP_TX_FC_TABLE_ENTRY(&can1_isotp_tx, 0x701U, CCX_ID_STANDARD)
+    [CAN1_RX_ISOTP_FC] = CCX_ISOTP_TX_FC_TABLE_ENTRY(&isotp_tx1, 0x701U, CCX_ID_STANDARD)
 };
 
 CCX_RX_table_t can2_rx_table[CAN2_RX_END] =
@@ -182,7 +182,7 @@ CCX_RX_table_t can2_rx_table[CAN2_RX_END] =
         .Parser = can2_speed_rx_parser,
         .TimeoutCallback = NULL
     },
-    [CAN2_RX_ISOTP_DATA] = CCX_ISOTP_RX_TABLE_ENTRY(&can2_isotp_rx, 0x700U, CCX_ID_STANDARD)
+    [CAN2_RX_ISOTP_DATA] = CCX_ISOTP_RX_TABLE_ENTRY(&isotp_rx1, 0x700U, CCX_ID_STANDARD)
 };
 
 void can1_rx_unregistered(const CCX_instance_t *instance, CCX_message_t *msg)
