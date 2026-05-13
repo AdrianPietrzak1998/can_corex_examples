@@ -116,9 +116,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-//	  LOG_WriteLine("Start");
-//	  HAL_Delay(1000);
 	  can_app_poll();
 	  if ((uint32_t)(HAL_GetTick() - isotp_last_send_tick) >= 5000U)
 	  {
