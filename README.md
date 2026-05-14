@@ -21,6 +21,8 @@ The library sources and library documentation are in `can_corex/`. Board example
 - UART:
   - peripheral: `USART2`
   - baudrate: `115200`
+- Timer:
+  - `TIM17` is used as the 1 MHz high-resolution tick source in ISO-TP and bus monitoring examples
 
 ### NUCLEO-G491RE
 
@@ -37,6 +39,8 @@ The library sources and library documentation are in `can_corex/`. Board example
 - UART:
   - peripheral: `USART2`
   - baudrate: `115200`
+- Timer:
+  - `TIM17` is used as the 1 MHz high-resolution tick source in ISO-TP and bus monitoring examples
 
 ### NUCLEO-F767ZI
 
