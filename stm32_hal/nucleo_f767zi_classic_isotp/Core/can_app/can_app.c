@@ -182,6 +182,30 @@ static void can_app_handle_rx(CAN_HandleTypeDef *hcan, uint32_t rx_fifo, CCX_ins
     (void)CCX_RX_PushMsg(instance, &msg);
 }
 
+static void can_app_handle_rx_fifo(CAN_HandleTypeDef *hcan, uint32_t rx_fifo)
+{
+    CCX_instance_t *instance = NULL;
+
+    if (hcan->Instance == CAN1)
+    {
+        instance = &can1;
+    }
+    else if (hcan->Instance == CAN2)
+    {
+        instance = &can2;
+    }
+
+    if (instance == NULL)
+    {
+        return;
+    }
+
+    while (HAL_CAN_GetRxFifoFillLevel(hcan, rx_fifo) > 0U)
+    {
+        can_app_handle_rx(hcan, rx_fifo, instance);
+    }
+}
+
 static void can_app_config_filter(CAN_HandleTypeDef *hcan, uint32_t filter_bank, uint32_t fifo_assignment)
 {
     CAN_FilterTypeDef filter = {0};
@@ -230,8 +254,8 @@ void can_app_init(void)
     can_app_config_filter(&hcan1, 0U, CAN_RX_FIFO0);
     can_app_config_filter(&hcan2, 14U, CAN_RX_FIFO1);
 
-    HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-    HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING);
+    HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING);
+    HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING);
 
     HAL_CAN_Start(&hcan1);
     HAL_CAN_Start(&hcan2);
@@ -293,22 +317,10 @@ void can_app_send_isotp_tx2(const uint8_t *data, CCX_ISOTP_Length_t length)
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    if (hcan->Instance == CAN1)
-    {
-        while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
-        {
-            can_app_handle_rx(hcan, CAN_RX_FIFO0, &can1);
-        }
-    }
+    can_app_handle_rx_fifo(hcan, CAN_RX_FIFO0);
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    if (hcan->Instance == CAN2)
-    {
-        while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO1) > 0U)
-        {
-            can_app_handle_rx(hcan, CAN_RX_FIFO1, &can2);
-        }
-    }
+    can_app_handle_rx_fifo(hcan, CAN_RX_FIFO1);
 }
