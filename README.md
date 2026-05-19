@@ -79,3 +79,18 @@ G4 examples use the STM32 FDCAN HAL. F7 examples use the STM32 bxCAN HAL.
 | `nucleo_f767zi_classic_rxtx` | bxCAN classic CAN RX/TX, callbacks, timeout, unregistered frame. |
 | `nucleo_f767zi_classic_isotp` | ISO-TP over bxCAN classic CAN, two sessions, high-resolution STmin timing. |
 | `nucleo_f767zi_classic_bus_monitoring` | bxCAN classic CAN with software bus monitoring, ESR error counters, recovery logs. |
+| `nucleo_f767zi_freertos_lwip_classic_slcan_tcp_server` | bxCAN classic CAN bridged to SLCAN over TCP using FreeRTOS and LwIP. |
+
+## SLCAN TCP Server Example
+
+`nucleo_f767zi_freertos_lwip_classic_slcan_tcp_server` exposes virtual CAN CoreX instances over TCP while keeping the physical bxCAN buses active.
+
+- `CAN1` is bridged to `can1_eth` on TCP port `7001`.
+- `CAN2` is bridged to `can2_eth` on TCP port `7002`.
+- The board acts as the TCP server.
+- The TCP payload format is classic SLCAN text frames, for example `t3011AA\r`.
+- Frames received from a physical CAN bus are forwarded to the matching TCP client.
+- Frames transmitted by the local CAN CoreX instance are also forwarded to the matching TCP client.
+- Frames received from TCP are injected into the virtual instance and forwarded to the matching physical CAN bus.
+
+The virtual `can*_eth` instances do not use a physical CAN peripheral. They are connected to the physical CAN instances through `can_corex_net`.

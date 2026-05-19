@@ -13,10 +13,12 @@
 
 #define CAN_STACK_SIZE 200
 #define CAN1_ETH_TCP_PORT 7001U
+#define CAN2_ETH_TCP_PORT 7002U
 
 typedef enum
 {
     CAN_APP_TCP_CAN1_ETH = 0,
+    CAN_APP_TCP_CAN2_ETH,
     CAN_APP_TCP_END
 } can_app_tcp_endpoint_t;
 
@@ -24,7 +26,9 @@ static CCX_instance_t can1;
 static CCX_instance_t can2;
 
 static CCX_instance_t can1_eth;
+static CCX_instance_t can2_eth;
 static CCX_net_t can1_net;
+static CCX_net_t can2_net;
 
 static const can_app_tcp_endpoint_config_t can_app_tcp_endpoints[CAN_APP_TCP_END] =
 {
@@ -32,6 +36,11 @@ static const can_app_tcp_endpoint_config_t can_app_tcp_endpoints[CAN_APP_TCP_END
     {
         .Name = "can1_eth",
         .Port = CAN1_ETH_TCP_PORT
+    },
+    [CAN_APP_TCP_CAN2_ETH] =
+    {
+        .Name = "can2_eth",
+        .Port = CAN2_ETH_TCP_PORT
     }
 };
 
@@ -66,6 +75,13 @@ static CCX_BusIsFree_t can2_bus_check(const CCX_instance_t *instance)
 }
 
 static CCX_BusIsFree_t can1_eth_bus_check(const CCX_instance_t *instance)
+{
+    (void)instance;
+
+    return CCX_BUS_FREE;
+}
+
+static CCX_BusIsFree_t can2_eth_bus_check(const CCX_instance_t *instance)
 {
     (void)instance;
 
@@ -120,6 +136,13 @@ static void can1_eth_send(const CCX_instance_t *instance, const CCX_message_t *m
     (void)instance;
 
     (void)can_app_tcp_send(CAN_APP_TCP_CAN1_ETH, msg);
+}
+
+static void can2_eth_send(const CCX_instance_t *instance, const CCX_message_t *msg)
+{
+    (void)instance;
+
+    (void)can_app_tcp_send(CAN_APP_TCP_CAN2_ETH, msg);
 }
 
 static void can_app_handle_rx(CAN_HandleTypeDef *hcan, uint32_t rx_fifo, CCX_instance_t *instance)
@@ -201,6 +224,7 @@ static void vCanTaskCode(void *pvParameters)
 static void can_app_init_net(void)
 {
     (void)CCX_net_clear_nodes(&can1_net);
+    (void)CCX_net_clear_nodes(&can2_net);
 
     can1_net.NodeList[0].NodeInstance = &can1;
     can1_net.NodeList[0].NodeSettings.Replication = CCX_NET_TX_REPLICATION;
@@ -211,6 +235,16 @@ static void can_app_init_net(void)
     can1_net.NodeList[1].NodeSettings.NodeType = CCX_NET_NODE_IN_NET;
 
     (void)CCX_net_init(&can1_net);
+
+    can2_net.NodeList[0].NodeInstance = &can2;
+    can2_net.NodeList[0].NodeSettings.Replication = CCX_NET_TX_REPLICATION;
+    can2_net.NodeList[0].NodeSettings.NodeType = CCX_NET_NODE_IN_NET;
+
+    can2_net.NodeList[1].NodeInstance = &can2_eth;
+    can2_net.NodeList[1].NodeSettings.Replication = CCX_NET_TX_REPLICATION;
+    can2_net.NodeList[1].NodeSettings.NodeType = CCX_NET_NODE_IN_NET;
+
+    (void)CCX_net_init(&can2_net);
 }
 
 void can_app_init(void)
@@ -242,6 +276,15 @@ void can_app_init(void)
                    0U,
                    can1_eth_send,
                    can1_eth_bus_check,
+                   NULL);
+
+    (void)CCX_Init(&can2_eth,
+                   NULL,
+                   NULL,
+                   0U,
+                   0U,
+                   can2_eth_send,
+                   can2_eth_bus_check,
                    NULL);
 
     can_app_tcp_init(can_app_tcp_endpoints, CAN_APP_TCP_END);
@@ -277,9 +320,15 @@ void can_app_poll(void)
         (void)CCX_RX_PushMsg(&can1_eth, &eth_msg);
     }
 
+    while (can_app_tcp_pop_rx(CAN_APP_TCP_CAN2_ETH, &eth_msg) == pdPASS)
+    {
+        (void)CCX_RX_PushMsg(&can2_eth, &eth_msg);
+    }
+
     (void)CCX_Poll(&can1);
     (void)CCX_Poll(&can2);
     (void)CCX_Poll(&can1_eth);
+    (void)CCX_Poll(&can2_eth);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
