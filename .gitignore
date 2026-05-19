@@ -14,9 +14,6 @@ obj/
 # STM32CubeIDE / Eclipse metadata
 .metadata/
 .settings/
-.project
-.cproject
-.mxproject
 *.launch
 
 # Generated STM32 and embedded build artifacts
